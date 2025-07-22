@@ -1,0 +1,409 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Calendar Agent{% endblock %}
+
+{% block content %}
+<!-- Success/Error Messages -->
+<div id="alertContainer"></div>
+
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4" style="color: #003d67;">
+            <i class="fas fa-tachometer-alt me-2" style="color: #ec792b;"></i>
+            Dashboard
+        </h2>
+        
+        <div class="card">
+            <div class="card-header" style="background: #fbe4d5;">
+                <ul class="nav nav-tabs card-header-tabs" id="mainTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="calendar-tab" data-bs-toggle="tab" data-bs-target="#calendar-pane" type="button" role="tab" style="color: #003d67;">
+                            <i class="fas fa-calendar-plus me-2" style="color: #ec792b;"></i>
+                            Add Calendar
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="agent-tab" data-bs-toggle="tab" data-bs-target="#agent-pane" type="button" role="tab" style="color: #003d67;">
+                            <i class="fas fa-robot me-2" style="color: #ec792b;"></i>
+                            LLM Agent
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="integrated-tab" data-bs-toggle="tab" data-bs-target="#integrated-pane" type="button" role="tab" style="color: #003d67;">
+                            <i class="fas fa-calendar-alt me-2" style="color: #ec792b;"></i>
+                            Integrated Calendar
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="tab-content">
+                <!-- Add Calendar Tab -->
+                <div class="tab-pane fade show active" id="calendar-pane" role="tabpanel">
+                    <h5 class="mb-4">Connect Your Calendars</h5>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fab fa-google fa-3x mb-3" style="color: #ec792b;"></i>
+                                    <h6>Google Calendar</h6>
+                                    <p class="text-muted small">Connect your Google Calendar to sync events</p>
+                                    <button class="btn btn-custom" style="background: #ec792b; color: #fff;" onclick="connectCalendar('google')">
+                                        <i class="fas fa-link me-2"></i>
+                                        Connect Google
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fab fa-microsoft fa-3x text-primary mb-3"></i>
+                                    <h6>Microsoft Calendar</h6>
+                                    <p class="text-muted small">Connect your Outlook/Office 365 Calendar</p>
+                                    <button class="btn btn-primary btn-custom" onclick="connectCalendar('microsoft')">
+                                        <i class="fas fa-link me-2"></i>
+                                        Connect Microsoft
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>Connected Accounts</h6>
+                    <div id="connectedAccounts">
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Loading connected accounts...
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- LLM Agent Tab -->
+                <div class="tab-pane fade" id="agent-pane" role="tabpanel">
+                    <h5 class="mb-4">Calendar Assistant</h5>
+                    
+                    <div class="chat-container" id="chatContainer">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-robot fa-2x mb-3"></i>
+                            <p>Hello! I'm your calendar assistant. You can ask me about your events, schedule, or any general questions.</p>
+                            <p><strong>Try saying:</strong></p>
+                            <ul class="list-unstyled">
+                                <li>• "Show me my next 15 events"</li>
+                                <li>• "What's my schedule today?"</li>
+                                <li>• "Tell me about my connected calendars"</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group mt-3">
+                        <input type="text" class="form-control" id="chatInput" placeholder="Ask me about your calendar or anything else...">
+                        <button class="btn btn-primary" onclick="sendMessage()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Integrated Calendar Tab -->
+                <div class="tab-pane fade" id="integrated-pane" role="tabpanel">
+                    <h5 class="mb-4">Integrated Calendar View</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">Calendar</h6>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="previousMonth()">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </button>
+                                        <span id="currentMonth" class="mx-3"></span>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="nextMonth()">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div id="calendarView">
+                                        <div class="text-center text-muted py-4">
+                                            <i class="fas fa-calendar-alt fa-2x mb-3"></i>
+                                            <p>Calendar will be displayed here</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Upcoming Events</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div id="upcomingEvents">
+                                        <div class="text-center text-muted py-4">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                            Loading events...
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentSessionId = null;
+
+// Load connected accounts
+async function loadConnectedAccounts() {
+    try {
+        const response = await fetch('/calendar/accounts', {
+            headers: getAuthHeaders()
+        });
+        
+        if (response.ok) {
+            const accounts = await response.json();
+            displayConnectedAccounts(accounts);
+        } else {
+            handleApiError(response);
+        }
+    } catch (error) {
+        console.error('Error loading accounts:', error);
+    }
+}
+
+function displayConnectedAccounts(accounts) {
+    const container = document.getElementById('connectedAccounts');
+    
+    if (accounts.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-calendar-times fa-2x mb-3"></i>
+                <p>No calendar accounts connected yet.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '<div class="list-group">';
+    accounts.forEach(account => {
+        html += `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fab fa-${account.provider} me-2"></i>
+                    <strong>${account.provider.charAt(0).toUpperCase() + account.provider.slice(1)}</strong>
+                    <br>
+                    <small class="text-muted">${account.account_email}</small>
+                </div>
+                <div>
+                    <small class="text-muted">Connected: ${new Date(account.connected_at).toLocaleDateString()}</small>
+                    <button class="btn btn-sm btn-outline-danger ms-2" onclick="disconnectAccount(${account.id})">
+                        <i class="fas fa-unlink"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    
+    container.innerHTML = html;
+}
+
+// Connect calendar
+async function connectCalendar(provider) {
+    try {
+        const response = await fetch(`/calendar/connect/${provider}`, {
+            headers: getAuthHeaders()
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            // Redirect to OAuth URL in the same window
+            window.location.href = data.authorization_url;
+        } else {
+            handleApiError(response);
+        }
+    } catch (error) {
+        showAlert('Error connecting calendar: ' + error.message, 'danger');
+    }
+}
+
+// Disconnect account
+async function disconnectAccount(accountId) {
+    if (!confirm('Are you sure you want to disconnect this calendar?')) return;
+    
+    try {
+        const response = await fetch(`/calendar/accounts/${accountId}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+        
+        if (response.ok) {
+            loadConnectedAccounts();
+            alert('Calendar disconnected successfully');
+        } else {
+            handleApiError(response);
+        }
+    } catch (error) {
+        alert('Error disconnecting calendar: ' + error.message);
+    }
+}
+
+// Chat functionality
+async function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    input.value = '';
+    appendMessage('user', message);
+    
+    try {
+        const response = await fetch('/agent/chat', {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                message: message,
+                session_id: currentSessionId
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            currentSessionId = data.session_id;
+            appendMessage('assistant', data.response);
+        } else {
+            handleApiError(response);
+        }
+    } catch (error) {
+        appendMessage('assistant', 'Sorry, I encountered an error. Please try again.');
+    }
+}
+
+function appendMessage(sender, message) {
+    const container = document.getElementById('chatContainer');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `mb-3 ${sender === 'user' ? 'text-end' : ''}`;
+    
+    messageDiv.innerHTML = `
+        <div class="d-inline-block ${sender === 'user' ? 'bg-primary text-white' : 'bg-light'} rounded px-3 py-2" style="max-width: 80%;">
+            <strong>${sender === 'user' ? 'You' : 'Assistant'}:</strong>
+            <div class="mt-1">${message.replace(/\n/g, '<br>')}</div>
+        </div>
+    `;
+    
+    container.appendChild(messageDiv);
+    container.scrollTop = container.scrollHeight;
+}
+
+// Calendar functionality
+let currentDate = new Date();
+
+function loadUpcomingEvents() {
+    // This would load events from the API
+    // Implementation depends on your calendar integration
+}
+
+function previousMonth() {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    updateCalendarView();
+}
+
+function nextMonth() {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    updateCalendarView();
+}
+
+function updateCalendarView() {
+    const monthNames = ["January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"];
+    
+    document.getElementById('currentMonth').textContent = 
+        `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+    
+    // Here you would implement the calendar grid generation
+    // For now, just show a placeholder
+    document.getElementById('calendarView').innerHTML = `
+        <div class="text-center text-muted py-4">
+            <p>Calendar view for ${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}</p>
+            <p>Calendar grid implementation would go here</p>
+        </div>
+    `;
+}
+
+// Allow Enter key to send messages
+document.getElementById('chatInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        sendMessage();
+    }
+});
+
+// Initialize the page
+document.addEventListener('DOMContentLoaded', function() {
+    // Ensure user is authenticated
+    if (!localStorage.getItem('access_token')) {
+        window.location.href = '/login';
+        return;
+    }
+    
+    // Check for success/error messages in URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    if (urlParams.has('success')) {
+        const success = urlParams.get('success');
+        const provider = urlParams.get('provider');
+        
+        if (success === 'calendar_connected') {
+            showAlert(`${provider.charAt(0).toUpperCase() + provider.slice(1)} calendar connected successfully!`, 'success');
+        }
+        
+        // Clear URL parameters
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    if (urlParams.has('error')) {
+        const error = urlParams.get('error');
+        const message = urlParams.get('message');
+        
+        if (error === 'calendar_connection_failed') {
+            showAlert(`Failed to connect calendar: ${message || 'Unknown error'}`, 'danger');
+        }
+        
+        // Clear URL parameters
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    loadConnectedAccounts();
+    updateCalendarView();
+    loadUpcomingEvents();
+});
+
+// Show alert message
+function showAlert(message, type = 'info') {
+    const alertContainer = document.getElementById('alertContainer');
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.appendChild(alertDiv);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

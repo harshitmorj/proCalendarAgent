@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Calendar Agent{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #d3dbe1ff;
+            min-height: 100vh;
+            color: #434343;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(141,73,26,0.08);
+            background: #fff;
+        }
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: #ec792b !important;
+        }
+        .tab-pane {
+            background: #fff;
+            border-radius: 0 0 15px 15px;
+            padding: 20px;
+        }
+        .nav-tabs .nav-link {
+            border-radius: 10px 10px 0 0;
+            font-weight: 500;
+            color: #003d67;
+        }
+        .nav-tabs .nav-link.active {
+            background: #ec792b;
+            color: #fff !important;
+            border-color: #ec792b #ec792b #fff;
+        }
+        .btn-custom {
+            border-radius: 25px;
+            padding: 10px 30px;
+            font-weight: 500;
+            background: #ec792b;
+            color: #fff;
+            border: none;
+        }
+        .btn-primary {
+            background: #003d67;
+            border-color: #003d67;
+        }
+        .btn-danger {
+            background: #DC4F45;
+            border-color: #DC4F45;
+        }
+        .btn-success {
+            background: #45DCA6;
+            border-color: #45DCA6;
+        }
+        .btn-outline-primary {
+            color: #003d67;
+            border-color: #003d67;
+        }
+        .btn-outline-danger {
+            color: #DC4F45;
+            border-color: #DC4F45;
+        }
+        .btn-outline-success {
+            color: #45DCA6;
+            border-color: #45DCA6;
+        }
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ccd8e1;
+            border-radius: 10px;
+            padding: 15px;
+            background: #e6ecf0;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-top: 20px;
+        }
+        .calendar-day {
+            aspect-ratio: 1;
+            border: 1px solid #ccd8e1;
+            border-radius: 5px;
+            padding: 5px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .calendar-day:hover {
+            background: #f9d7bf;
+        }
+        .calendar-day.has-events {
+            background: #f4af80;
+            font-weight: bold;
+        }
+        .event-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 2px;
+        }
+        .google-event { background: #ec792b; }
+        .microsoft-event { background: #003d67; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg" style="background: #fbe4d5;">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-calendar-alt me-2"></i>
+                proCalendar
+            </a>
+            {% if user %}
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3" id="userInfo" style="display: none;">
+                    <i class="fas fa-user me-1"></i>
+                    Welcome, <span id="username"></span>
+                </span>
+                <a class="btn btn-outline-danger btn-sm" href="#" onclick="logout()" style="border-color: #DC4F45; color: #DC4F45;">
+                    <i class="fas fa-sign-out-alt me-1" style="color: #DC4F45;"></i>
+                    Logout
+                </a>
+            </div>
+            {% else %}
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3" id="userInfo" style="display: none;">
+                    <i class="fas fa-user me-1"></i>
+                    Welcome, <span id="username"></span>
+                </span>
+                <a class="btn btn-outline-danger btn-sm" href="#" onclick="logout()" id="logoutBtn" style="display: none; border-color: #DC4F45; color: #DC4F45;">
+                    <i class="fas fa-sign-out-alt me-1" style="color: #DC4F45;"></i>
+                    Logout
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+        // Global JavaScript functions
+        function logout() {
+            localStorage.removeItem('access_token');
+            window.location.href = '/login';
+        }
+
+        function getAuthHeaders() {
+            const token = localStorage.getItem('access_token');
+            return {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+        }
+
+        function handleApiError(response) {
+            if (response.status === 401) {
+                alert('Session expired. Please log in again.');
+                logout();
+                return;
+            }
+            return response.json().then(data => {
+                throw new Error(data.detail || 'An error occurred');
+            });
+        }
+
+        // Check if user is authenticated
+        function checkAuth() {
+            const token = localStorage.getItem('access_token');
+            if (!token && window.location.pathname !== '/login' && window.location.pathname !== '/') {
+                window.location.href = '/login';
+                return false;
+            }
+            return true;
+        }
+
+        // Load current user info
+        async function loadUserInfo() {
+            const token = localStorage.getItem('access_token');
+            if (!token) return;
+
+            try {
+                const response = await fetch('/api/me', {
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    const user = await response.json();
+                    const usernameEl = document.getElementById('username');
+                    if (usernameEl) {
+                        usernameEl.textContent = user.username;
+                        document.getElementById('userInfo').style.display = 'block';
+                        document.getElementById('logoutBtn').style.display = 'block';
+                    }
+                } else if (response.status === 401) {
+                    // Token is invalid, redirect to login
+                    localStorage.removeItem('access_token');
+                    if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
+                        window.location.href = '/login';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading user info:', error);
+            }
+        }
+
+        // Initialize authentication check
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
+                if (checkAuth()) {
+                    loadUserInfo();
+                }
+            }
+            
+            // Redirect old dashboard URL to new structure
+            if (window.location.pathname === '/dashboard') {
+                window.location.href = '/add-calendar';
+            }
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

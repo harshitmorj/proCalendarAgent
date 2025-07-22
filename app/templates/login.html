@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Calendar Agent{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <i class="fas fa-calendar-check fa-3x mb-3" style="color: #ec792b;"></i>
+                    <h3 class="card-title">Calendar Agent</h3>
+                    <p class="text-muted">Sign in to manage your calendars</p>
+                </div>
+
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required autocomplete="username">
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="btn btn-custom w-100" style="background: #003d67; color: #fff;">
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        Sign In
+                    </button>
+                </form>
+
+                <div class="text-center mt-4">
+                    <small style="color: #99b1c2;">
+                        Don't have an account? Contact your administrator.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, setting up login form...');
+    
+    const loginForm = document.getElementById('loginForm');
+    console.log('Login form element:', loginForm);
+    
+    if (!loginForm) {
+        console.error('Login form not found!');
+        return;
+    }
+    
+    loginForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        console.log('Form submitted');
+        
+        // Try multiple methods to get the form data
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        
+        console.log('Username input element:', usernameInput);
+        console.log('Password input element:', passwordInput);
+        
+        // Method 1: Direct getElementById
+        let username = usernameInput ? usernameInput.value : '';
+        let password = passwordInput ? passwordInput.value : '';
+        
+        console.log('Method 1 - Username:', `"${username}"`, 'Password length:', password.length);
+        
+        // Method 2: Using form elements collection
+        const formData = new FormData(loginForm);
+        const usernameFromForm = formData.get('username');
+        const passwordFromForm = formData.get('password');
+        
+        console.log('Method 2 - Username from FormData:', `"${usernameFromForm}"`, 'Password length:', passwordFromForm ? passwordFromForm.length : 0);
+        
+        // Method 3: Query selector
+        const usernameByQuery = document.querySelector('#username');
+        const passwordByQuery = document.querySelector('#password');
+        const usernameFromQuery = usernameByQuery ? usernameByQuery.value : '';
+        const passwordFromQuery = passwordByQuery ? passwordByQuery.value : '';
+        
+        console.log('Method 3 - Username from querySelector:', `"${usernameFromQuery}"`, 'Password length:', passwordFromQuery.length);
+        
+        // Use the best available method
+        username = username || usernameFromForm || usernameFromQuery || '';
+        password = password || passwordFromForm || passwordFromQuery || '';
+        
+        // Trim username
+        username = username.trim();
+        
+        console.log('Final values - Username:', `"${username}"`, 'Password length:', password.length);
+        
+        if (!username || !password) {
+            alert(`Please enter both username and password. Username: "${username}", Password length: ${password.length}`);
+            return;
+        }
+        
+        try {
+            const submitFormData = new FormData();
+            submitFormData.append('username', username);
+            submitFormData.append('password', password);
+            
+            console.log('Sending login request with username:', `"${username}"`);
+            const response = await fetch('/auth/login', {
+                method: 'POST',
+                body: submitFormData
+            });
+            
+            console.log('Response status:', response.status);
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Login successful');
+                localStorage.setItem('access_token', data.access_token);
+                window.location.href = '/dashboard';
+            } else {
+                const error = await response.json();
+                console.error('Login error:', error);
+                alert(error.detail || 'Login failed');
+            }
+        } catch (error) {
+            console.error('Network error:', error);
+            alert('An error occurred during login');
+        }
+    });
+
+    // Redirect if already logged in
+    if (localStorage.getItem('access_token')) {
+        window.location.href = '/dashboard';
+    }
+});
+</script>
+{% endblock %}

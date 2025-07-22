@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}LLM Agent - Calendar Agent{% endblock %}
+
+{% block content %}
+{% include "components/navigation.html" %}
+
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4" style="color: #003d67;">
+                <i class="fas fa-robot me-2" style="color: #ec792b;"></i>
+                Calendar Assistant
+            </h2>
+            
+            <div class="card">
+                <div class="card-body">
+                    <div class="chat-container" id="chatContainer">
+                        <div class="text-center" style="color: #99b1c2;">
+                            <i class="fas fa-robot fa-2x mb-3" style="color: #ec792b;"></i>
+                            <p>Hello! I'm your calendar assistant. You can ask me about your events, schedule, or any general questions.</p>
+                            <p><strong>Try saying:</strong></p>
+                            <ul class="list-unstyled">
+                                <li>• "Show me my next 15 events"</li>
+                                <li>• "What's my schedule today?"</li>
+                                <li>• "Tell me about my connected calendars"</li>
+                                <li>• "What's the weather like today?"</li>
+                                <li>• "Help me plan my week"</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group mt-3">
+                        <input type="text" class="form-control" id="chatInput" placeholder="Ask me about your calendar or anything else...">
+                        <button class="btn btn-primary" style="background: #003d67; border-color: #003d67;" onclick="sendMessage()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentSessionId = null;
+
+// Chat functionality
+async function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    input.value = '';
+    appendMessage('user', message);
+    
+    try {
+        const response = await fetch('/agent/chat', {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                message: message,
+                session_id: currentSessionId
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            currentSessionId = data.session_id;
+            appendMessage('assistant', data.response);
+        } else {
+            handleApiError(response);
+        }
+    } catch (error) {
+        appendMessage('assistant', 'Sorry, I encountered an error. Please try again.');
+    }
+}
+
+function appendMessage(sender, message) {
+    const container = document.getElementById('chatContainer');
+    
+    // Remove welcome message if it exists
+    const welcomeMsg = container.querySelector('.text-center.text-muted');
+    if (welcomeMsg) {
+        welcomeMsg.remove();
+    }
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `mb-3 ${sender === 'user' ? 'text-end' : ''}`;
+    
+    messageDiv.innerHTML = `
+        <div class="d-inline-block ${sender === 'user' ? 'bg-primary text-white' : 'bg-light'} rounded px-3 py-2" style="max-width: 80%;">
+            <strong>${sender === 'user' ? 'You' : 'Assistant'}:</strong>
+            <div class="mt-1">${message.replace(/\n/g, '<br>')}</div>
+        </div>
+    `;
+    
+    container.appendChild(messageDiv);
+    container.scrollTop = container.scrollHeight;
+}
+
+// Allow Enter key to send messages
+document.getElementById('chatInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        sendMessage();
+    }
+});
+
+// Initialize the page
+document.addEventListener('DOMContentLoaded', function() {
+    // Ensure user is authenticated
+    if (!localStorage.getItem('access_token')) {
+        window.location.href = '/login';
+        return;
+    }
+});
+</script>
+{% endblock %}

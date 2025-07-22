@@ -1,0 +1,85 @@
+<!-- Navigation component -->
+<nav class="navbar navbar-expand-lg mb-4 border-bottom glass-navbar">
+    <div class="container">
+        <!-- Removed calendar icon and text -->
+        
+        <div class="navbar-nav w-100">
+            <ul class="nav nav-pills w-100 justify-content-between">
+                <li class="nav-item flex-fill text-center">
+                    <a class="nav-link" href="/add-calendar" id="nav-add-calendar" style="color: #003d67; width: 100%;">
+                        <i class="fas fa-calendar-plus me-2 nav-icon" style="color: #ec792b;"></i>
+                        Add Calendar
+                    </a>
+                </li>
+                <li class="nav-item flex-fill text-center">
+                    <a class="nav-link" href="/agent-chat" id="nav-agent-chat" style="color: #003d67; width: 100%;">
+                        <i class="fas fa-robot me-2 nav-icon" style="color: #ec792b;"></i>
+                        LLM Agent
+                    </a>
+                </li>
+                <li class="nav-item flex-fill text-center">
+                    <a class="nav-link" href="/calendar-view" id="nav-calendar-view" style="color: #003d67; width: 100%;">
+                        <i class="fas fa-calendar-alt me-2 nav-icon" style="color: #ec792b;"></i>
+                        Calendar View
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="navbar-nav ms-3">
+            <span class="navbar-text me-3" id="userInfo" style="display: none; color: #434343;">
+                <i class="fas fa-user me-1" style="color: #003d67;"></i>
+                Welcome, <span id="username"></span>
+            </span>
+            <a class="btn btn-outline-danger btn-sm" href="#" onclick="logout()" id="logoutBtn" style="display: none; border-color: #DC4F45; color: #DC4F45;">
+                <i class="fas fa-sign-out-alt me-1" style="color: #DC4F45;"></i>
+                Logout
+            </a>
+        </div>
+    </div>
+</nav>
+
+<style>
+    .navbar-nav .nav-link.active {
+        background-color: #ec792b !important;
+        color: #fff !important;
+        border-radius: 0.5rem;
+    }
+    .navbar-nav .nav-link.active .nav-icon {
+        color: #fff !important;
+    }
+    .navbar-nav .nav-link {
+        transition: background 0.2s, color 0.2s;
+        width: 100%;
+    }
+    .nav-pills .nav-item {
+        flex: 1 1 0;
+    }
+    .glass-navbar {
+        background: rgba(251, 228, 213, 0.7);
+        backdrop-filter: blur(12px) saturate(180%);
+        -webkit-backdrop-filter: blur(12px) saturate(180%);
+        box-shadow: 0 2px 16px rgba(141, 73, 26, 0.12);
+        border-radius: 1rem;
+    }
+    #logoutBtn.btn-outline-danger:hover,
+    .btn-outline-danger:hover {
+        background: #DC4F45 !important;
+        color: #fff !important;
+        border-color: #DC4F45 !important;
+    }
+</style>
+<script>
+// Set active navigation based on current page
+document.addEventListener('DOMContentLoaded', function() {
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        if (link.getAttribute('href') === currentPath) {
+            link.classList.add('active');
+        } else {
+            link.classList.remove('active');
+        }
+    });
+});
+</script>
