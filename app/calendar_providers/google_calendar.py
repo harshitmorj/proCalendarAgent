@@ -303,6 +303,8 @@ class GoogleCalendarProvider:
                 body=google_event
             ).execute()
             
+            print(f"Event created for calendar {calendar_id}: {created_event.get('htmlLink')} in email {created_event.get('organizer', {}).get('email', 'unknown')}")
+            
             # Return formatted event
             return {
                 'id': created_event['id'],

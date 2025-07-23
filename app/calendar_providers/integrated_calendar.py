@@ -126,6 +126,8 @@ class IntegratedCalendar:
                     
                     # Add metadata to each calendar
                     for calendar in calendars:
+                        if not calendar.get('primary'):
+                            continue
                         calendar.update({
                             'provider': account.provider,
                             'account_email': account.account_email,
@@ -156,7 +158,7 @@ class IntegratedCalendar:
     def get_events_from_calendar(self, 
                                 provider: str,
                                 account_email: str,
-                                calendar_id: str,
+                                calendar_id: str = 'primary',
                                 start_date: Optional[datetime] = None,
                                 end_date: Optional[datetime] = None,
                                 max_results: int = 50) -> List[Dict[str, Any]]:

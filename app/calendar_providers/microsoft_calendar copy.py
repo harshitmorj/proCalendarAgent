@@ -155,7 +155,7 @@ class MicrosoftCalendarProvider:
                 
                 return formatted_events
             else:
-                print(f'Error fetching events: {response.status_code}')
+                print(f'Error fetching events: {response.status_code : response.text}')
                 return []
         except Exception as error:
             print(f'An error occurred: {error}')

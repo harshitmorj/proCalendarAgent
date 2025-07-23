@@ -80,50 +80,58 @@ class MicrosoftCalendarProvider:
             return None
     
     def refresh_access_token(self, token_file_path: Optional[str] = None) -> bool:
-        """Refresh access token using refresh token"""
+        """Refresh access token using refresh token, with improved error handling and logging."""
         if not token_file_path and self.user_id and self.account_email:
             token_file_path = self._get_token_file_path()
-        
+
         if not token_file_path:
+            print("No token file path provided for refresh.")
             return False
-        
+
         try:
             token_data = self.load_token(token_file_path)
             refresh_token = token_data.get('refresh_token')
-            
+
             if not refresh_token:
-                raise Exception("No refresh token available")
-            
+                print("No refresh token available in token data:", token_data)
+                return False
+
             app = msal.ConfidentialClientApplication(
                 self.client_id,
                 authority=self.authority,
                 client_credential=self.client_secret
             )
-            
+
             result = app.acquire_token_by_refresh_token(
                 refresh_token,
                 scopes=self.scopes
             )
-            
-            if "error" in result:
-                raise Exception(f"Token refresh failed: {result['error_description']}")
-            
+
+            print("MSAL refresh response:", result)
+
+            if "error" in result or not result.get("access_token"):
+                print(f"Token refresh failed: {result.get('error_description', 'Unknown error')}")
+                print("Prompt user to re-authenticate.")
+                return False
+
             # Update token data with new tokens
             updated_token_data = {
                 **token_data,
                 "access_token": result["access_token"],
                 "refresh_token": result.get("refresh_token", refresh_token),  # Keep old if new not provided
-                "expires_in": result["expires_in"],
-                "token_type": result["token_type"],
-                "scope": result["scope"]
+                "expires_in": result.get("expires_in"),
+                "token_type": result.get("token_type"),
+                "scope": result.get("scope")
             }
-            
+
             # Save updated token
             self.save_token(updated_token_data, token_file_path)
+            print("Token successfully refreshed and saved.")
             return True
-            
+
         except Exception as error:
             print(f"Token refresh error: {error}")
+            print("Prompt user to re-authenticate.")
             return False
         
     def get_authorization_url(self, state: str) -> str:
@@ -272,7 +280,7 @@ class MicrosoftCalendarProvider:
                 
                 return formatted_events
             else:
-                print(f'Error fetching events: {response.status_code}')
+                print(f'Error fetching events: {response.status_code} : {response.text}')
                 return []
         except Exception as error:
             print(f'An error occurred: {error}')
@@ -312,7 +320,7 @@ class MicrosoftCalendarProvider:
                 
                 return formatted_events
             else:
-                print(f'Error fetching events: {response.status_code}')
+                print(f'Error fetching events: {response.status_code} : {response.text}')
                 return []
         except Exception as error:
             print(f'An error occurred: {error}')

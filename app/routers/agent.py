@@ -37,12 +37,12 @@ async def chat_with_agent(
     try:
         # Get or create chat session
         session_id = chat_request.session_id or str(uuid.uuid4())
-        
+
         chat_session = db.query(ChatSession).filter(
             ChatSession.session_id == session_id,
             ChatSession.user_id == current_user.id
         ).first()
-        
+
         if not chat_session:
             chat_session = ChatSession(
                 user_id=current_user.id,
@@ -51,27 +51,48 @@ async def chat_with_agent(
             db.add(chat_session)
             db.commit()
             db.refresh(chat_session)
-        
+
+        # Fetch previous messages for memory
+        history_messages = db.query(ChatMessage).filter(
+            ChatMessage.chat_session_id == chat_session.id
+        ).order_by(ChatMessage.timestamp.asc()).all()
+
+        # Prepare history for agent
+        memory = []
+        for msg in history_messages:
+            memory.append({
+                "user": msg.message,
+                "agent": msg.response
+            })
+
         # Process message with the agent (create fresh instance to get updated API keys)
         agent = CalendarAgent()
-        response = agent.process_message(
+        raw_response = agent.process_message(
             message=chat_request.message,
             user_id=current_user.id,
-            db_session=db
+            db_session=db,
+            memory=memory
         )
         
+        if isinstance(raw_response, dict) and "message" in raw_response:
+            response = raw_response["message"]
+        else:
+            response = str(raw_response)
+
         # Save chat message and response
         chat_message = ChatMessage(
             chat_session_id=chat_session.id,
             message=chat_request.message,
-            response=response
+            response=str(response)
         )
         db.add(chat_message)
         db.commit()
-        
+
         return ChatResponse(response=response, session_id=session_id)
-        
+
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error processing message: {str(e)}")
 
 @router.get("/chat/history/{session_id}", response_model=List[ChatHistoryResponse])
