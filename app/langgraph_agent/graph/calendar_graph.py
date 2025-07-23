@@ -19,6 +19,7 @@ from app.langgraph_agent.nodes.clarify_node import clarify_node
 from app.langgraph_agent.nodes.human_in_loop_node import human_in_loop_node
 from app.langgraph_agent.nodes.rsvp_node import rsvp_node
 from app.langgraph_agent.nodes.knowledge_analysis_node import knowledge_analysis_node
+from app.langgraph_agent.nodes.free_time_node import free_time_node
 
 # Configure LangSmith tracing
 def setup_langsmith_tracing():
@@ -116,6 +117,8 @@ def router_edge(state: AgentState) -> str:
         return "schedule"
     elif intent == "rsvp":
         return "rsvp"
+    elif intent == "free_time":
+        return "free_time"
     elif intent == "knowledge_analysis":
         return "knowledge_analysis"
     else:
@@ -156,6 +159,8 @@ def orchestrator_edge(state: AgentState) -> str:
                 return "schedule"
             elif current_task.intent == CalendarIntent.RSVP:
                 return "rsvp"
+            elif current_task.intent == CalendarIntent.FREE_TIME:
+                return "free_time"
     
     # If no specific subtask in progress, continue orchestrating
     return END
@@ -191,6 +196,7 @@ builder.add_node("update", update_node)
 builder.add_node("delete", delete_node)
 builder.add_node("schedule", schedule_node)
 builder.add_node("rsvp", rsvp_node)
+builder.add_node("free_time", free_time_node)
 builder.add_node("clarify", clarify_node)
 builder.add_node("knowledge_analysis", knowledge_analysis_node)
 builder.add_node("human_in_loop", human_in_loop_node)
@@ -210,11 +216,12 @@ builder.add_conditional_edges("update", action_node_edge)
 builder.add_conditional_edges("delete", action_node_edge)
 builder.add_conditional_edges("schedule", action_node_edge)
 builder.add_conditional_edges("rsvp", action_node_edge)
+builder.add_conditional_edges("free_time", action_node_edge)
 
 # Add edges to END for simple nodes
 builder.add_edge("general", END)
 builder.add_edge("knowledge_analysis", END)
-builder.add_edge("clarify", "router")  # Clarify routes back to router for re-evaluation
+builder.add_edge("clarify", END)  # Clarify routes back to router for re-evaluation
 
 # Compile the graph with LangSmith tracing enabled
 calendar_graph = builder.compile(

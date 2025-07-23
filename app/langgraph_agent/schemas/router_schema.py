@@ -10,6 +10,7 @@ class CalendarIntent(str, Enum):
     DELETE = "delete"
     SCHEDULE = "schedule"  # For multi-user meeting scheduling
     RSVP = "rsvp"  # For checking attendee responses
+    FREE_TIME = "free_time"  # For free time and availability queries
     COMPOUND = "compound"
     CLARIFY = "clarify"
     KNOWLEDGE_ANALYSIS = "knowledge_analysis"  # For setting up semantic search

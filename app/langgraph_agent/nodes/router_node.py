@@ -34,6 +34,7 @@ Calendar Intents:
 - DELETE: Remove events with all required information
 - SCHEDULE: Multi-user meeting coordination
 - RSVP: Check attendee responses/RSVP status (who's attending, declined, etc.)
+- FREE_TIME: Find free time slots, check availability, suggest meeting times, or analyze schedule availability
 - COMPOUND: Multiple operations (e.g., "delete all meetings with John and create a new one")
 - CLARIFY: User has provided less information than needed for the task
 - KNOWLEDGE_ANALYSIS: Set up semantic search capabilities for smarter event search
@@ -43,6 +44,7 @@ For COMPOUND tasks, break them down into subtasks.
 For DELETE tasks involving search (like "delete meetings with Soham"), mark as COMPOUND.
 For RSVP queries like "who is attending the meeting", "who declined", use RSVP intent.
 For requests about "semantic search", "smart search", "analyze my calendar", "set up knowledge", use KNOWLEDGE_ANALYSIS.
+For FREE_TIME queries like "when am I free", "find available time", "suggest meeting times", "check availability", use FREE_TIME intent.
 
 Return ONLY a JSON object with this exact structure:
 {
@@ -61,7 +63,10 @@ Examples:
 - "Show me meetings tomorrow" → {"intent": "SEARCH", "reason": "User wants to view events", "confidence": 0.9}
 - "Delete meetings with Soham" → {"intent": "COMPOUND", "subtasks": [{"intent": "SEARCH", "description": "Find meetings with Soham"}, {"intent": "DELETE", "description": "Delete found meetings"}]}
 - "Set up semantic search" → {"intent": "KNOWLEDGE_ANALYSIS", "reason": "User wants to enable smart search", "confidence": 0.9}
-- "Create meeting tomorrow" → {"intent": "CLARIFY", "reason": "Missing details like time, date, attendees", "needs_clarification": true}
+- "When am I free tomorrow?" → {"intent": "FREE_TIME", "reason": "User wants to find available time slots", "confidence": 0.9}
+- "Find 2 hours of free time this week" → {"intent": "FREE_TIME", "reason": "User wants to find specific duration of free time", "confidence": 0.9}
+- "Check my availability for 2pm" → {"intent": "FREE_TIME", "reason": "User wants to check if they're available at a specific time", "confidence": 0.9}
+- "Suggest meeting times with John" → {"intent": "FREE_TIME", "reason": "User wants meeting time suggestions", "confidence": 0.8}
 - "Who is attending the team meeting?" → {"intent": "RSVP", "reason": "User wants to check attendee status", "confidence": 0.9}
 - "Who declined the lunch meeting?" → {"intent": "RSVP", "reason": "User wants to see who declined", "confidence": 0.9}
 - "Show me who hasn't responded to the event" → {"intent": "RSVP", "reason": "User wants to check pending responses", "confidence": 0.8}
@@ -125,6 +130,9 @@ Examples:
         
         elif any(phrase in message_lower for phrase in ["semantic search", "smart search", "analyze calendar", "set up knowledge", "knowledge analysis", "enable semantic", "setup semantic"]):
             return RouterOutput(intent=CalendarIntent.KNOWLEDGE_ANALYSIS, reason="Knowledge analysis setup", confidence=0.8)
+        
+        elif any(phrase in message_lower for phrase in ["free time", "available", "availability", "when am i free", "find time", "suggest meeting", "best time", "optimal time", "next available", "check availability", "free slots"]):
+            return RouterOutput(intent=CalendarIntent.FREE_TIME, reason="Free time/availability query", confidence=0.8)
         
         elif any(word in message_lower for word in ["find", "show", "list", "search", "get"]):
             return RouterOutput(intent=CalendarIntent.SEARCH, reason="Search operation", confidence=0.6)
